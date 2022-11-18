@@ -46,6 +46,39 @@ enum ParsePersonError {
 impl FromStr for Person {
     type Err = ParsePersonError;
     fn from_str(s: &str) -> Result<Person, Self::Err> {
+        let mut res = Person {
+            name: "".to_string(),
+            age: 0,
+        };
+        if s.is_empty() {
+            return Err(ParsePersonError::Empty);
+        }
+        let mut info = s.split(",");
+
+        if let Some(name) = info.next() {
+            if name.is_empty() {
+                return Err(ParsePersonError::NoName);
+            }
+            res.name = name.to_string();
+        }
+        if let Some(age_str) = info.next() {
+            match age_str.parse::<usize>() {
+                Err(e) => {
+                    return Err(ParsePersonError::ParseInt(e));
+                }
+                Ok(age) => {
+                    res.age = age;
+                }
+            };
+        } else {
+            return Err(ParsePersonError::BadLen);
+        }
+
+        if let Some(_) = info.next() {
+            Err(ParsePersonError::BadLen)?
+        };
+
+        Ok(res)
     }
 }
 
@@ -62,6 +95,7 @@ mod tests {
     fn empty_input() {
         assert_eq!("".parse::<Person>(), Err(ParsePersonError::Empty));
     }
+
     #[test]
     fn good_input() {
         let p = "John,32".parse::<Person>();
@@ -70,6 +104,7 @@ mod tests {
         assert_eq!(p.name, "John");
         assert_eq!(p.age, 32);
     }
+
     #[test]
     fn missing_age() {
         assert!(matches!(
